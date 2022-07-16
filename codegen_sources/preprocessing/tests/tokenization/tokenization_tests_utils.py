@@ -11,6 +11,8 @@ import difflib
 def tokenizer_test(test_examples, processor, keep_comments):
     for i, (x, y) in enumerate(test_examples):
         y_ = processor.tokenize_code(x, keep_comments=keep_comments)
+        # print(f"x{x}")
+        # print(f"y_{y_}")
         if y_ != y:
             line_diff = [
                 j for j, (line, line_) in enumerate(zip(y, y_)) if line != line_

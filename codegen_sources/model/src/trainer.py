@@ -793,7 +793,7 @@ class Trainer(object):
         x, len_x = batch_sentences(x, self.params.pad_index, self.params.eos_index)
         y, len_y = batch_sentences(y, self.params.pad_index, self.params.eos_index)
 
-        assert sum(sum((x < 0).float())) == 0
+        assert sum(sum((x < 0).float())) == 0, x
 
         return (x, len_x, y, len_y)
 

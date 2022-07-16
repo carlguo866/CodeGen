@@ -92,7 +92,7 @@ class MonolingualMode(DatasetMode):
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            sys.stderr.write(f"Error tokenizing content {e}")
+            sys.stderr.write(f"Error tokenizing content {e} {line_id} {json_line['repo_name']+json_line['path']} ")
             return default_return
 
     def _learn_bpe(self, ncodes: int, executor: Executor = None):

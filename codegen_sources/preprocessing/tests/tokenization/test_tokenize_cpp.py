@@ -18,6 +18,34 @@ from codegen_sources.preprocessing.tests.tokenization.tokenization_tests_utils i
 
 processor = CppProcessor(root_folder=Path(__file__).parents[4].joinpath("tree-sitter"))
 
+MY_TEST = [(
+        r"""
+#define NULL ((void*)0)
+typedef unsigned long size_t;  // Customize by platform.
+typedef long intptr_t; typedef unsigned long uintptr_t;
+typedef long scalar_t__;  // Either arithmetic or pointer type.
+/* By default, we understand bool (as a convenience). */
+typedef int bool;
+#define false 0
+#define true 1
+
+/* Forward declarations */
+typedef  struct TYPE_3__   TYPE_1__ ;
+
+/* Type definitions */
+struct TYPE_3__ {int len; } ;
+typedef  TYPE_1__ Vector ;
+
+/* Variables and functions */
+
+int vec_len(Vector *vec) {
+    return vec->len;
+}
+""",
+        [],
+)]
+
+
 TESTS = []
 TESTS.append(
     (
@@ -560,8 +588,13 @@ int main ( ) {
     )
 ]
 
+def test_cpp_tokenizer_my_test():
+    print(MY_TEST)
+    tokenizer_test(MY_TEST, processor, keep_comments=False)
+
 
 def test_cpp_tokenizer_discarding_comments():
+    
     tokenizer_test(TESTS, processor, keep_comments=False)
 
 
@@ -720,3 +753,11 @@ def test_extract_cpp_functions():
         expected_sa, expected_cl = expected_funcs
         compare_funcs(actual_funcs_sa, expected_sa)
         compare_funcs(actual_funcs_cl, expected_cl)
+
+if __name__ == '__main__':
+    # test_cpp_tokenizer_my_test()
+    text = "#define DS3232_REG_YEAR         0x06\n#define DS3232_REG_ALARM1       0x07       /* Alarm 1 BASE */\n"
+    y = processor.tokenize_code(text, keep_comments=False)
+    print(y)
+    print(y == None)
+    

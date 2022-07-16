@@ -59,8 +59,10 @@ class TreeSitterLangProcessor(LangProcessor):
     def tokenize_code(self, code, keep_comments=False, process_strings=True):
         tokenized_code = []
         tokens, token_types = self.get_tokens_and_types(code)
+        # comment = 0 
         for token, token_type in zip(tokens, token_types):
             if token_type in COMMENT_TYPES and keep_comments is False:
+                # comment += 1
                 continue
             if token_type in self.ast_nodes_type_string:
                 token = process_string(
@@ -75,6 +77,8 @@ class TreeSitterLangProcessor(LangProcessor):
                     token = token.replace("\n", "NEW_LINE")
                     token = token.replace("NEW_LINENEW_LINE", "NEW_LINE")
                 tokenized_code.append(token)
+
+        # print(f"comment{comment}", flush=True)
         return tokenized_code
 
     def get_tokens_and_types(self, code):
@@ -102,6 +106,9 @@ class TreeSitterLangProcessor(LangProcessor):
                 tokens.append(snippet)
                 tokens_type.append(node.type)
             return
+        # print(f"{node.type} {[child.type for child in node.children]}")
+        # print(f"tokens {tokens}")
+        # print('\n\n')
         for child in node.children:
             self.dfs(code, child, tokens, tokens_type)
 

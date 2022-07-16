@@ -493,6 +493,14 @@ class ParallelDataset(Dataset):
         for lengths in self.lengths_list:
             assert lengths.min() > 0
 
+        # print("herehere sent_list",flush=True)
+        # print(self.sent_list)
+        # print(self.sent_list.size)
+        # indices = [i for i, x in enumerate(self.sent_list) if x == 3]
+        # for i in indices: 
+        #     if i > 4: 
+        #         print(self.sent_list[i-4:i+4])
+
     def remove_empty_sentences(self):
         """
         Remove empty sentences.

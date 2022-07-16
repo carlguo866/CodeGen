@@ -76,6 +76,7 @@ def preprocess(args):
             array_parallelism=200,
         )
     else:
+        logger.info('local')
         cluster_tokenization = LocalExecutor(Path(args.input_path).joinpath("log"))
         cluster_train_bpe = LocalExecutor(Path(args.input_path).joinpath("log"))
         cluster_apply_bpe = LocalExecutor(Path(args.input_path).joinpath("log"))

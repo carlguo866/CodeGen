@@ -1,0 +1,40 @@
+export NGPU=2; python -m torch.distributed.launch --nproc_per_node=$NGPU codegen_sources/model/train.py \
+--exp_name deobfuscation \
+--dump_path '/home/carl/CodeGen/output' \
+--data_path '/home/carl/CodeGen/data/github3/c_obfuscated/XLM-syml' \
+--split_data_accross_gpu local \
+--do_steps 'cpp_obfuscated-cpp_dictionary' \
+--obf_proba '0.5' \
+--ae_steps 'cpp_obfuscated' \
+--mask_length poisson \
+--word_shuffle 3  \
+--word_dropout '0.1' \
+--word_blank '0.3' \
+--encoder_only False \
+--n_layers 0  \
+--n_layers_encoder 12  \
+--n_layers_decoder 6 \
+--emb_dim 768  \
+--n_heads 12  \
+--lgs 'cpp_dictionary-cpp_obfuscated' \
+--max_vocab 64000 \
+--gelu_activation true \
+--roberta_mode false \
+--reload_model '/home/carl/CodeGen/output/mlm/76mxxgyrjj/best-valid_mlm_ppl.pth,' \
+--lgs_mapping 'cpp_dictionary:cpp,cpp_obfuscated:cpp' \
+--amp 0 \
+--fp16 false  \
+--tokens_per_batch 1500  \
+--group_by_size true \
+--max_batch_size 128 \
+--max_len 2000 \
+--epoch_size 100000  \
+--max_epoch 10000000  \
+--split_data_accross_gpu global \
+--optimizer 'adam_inverse_sqrt,warmup_updates=10000,lr=0.0001,weight_decay=0.01' \
+--eval_bleu true \
+--eval_subtoken_score true \
+--save_periodic 10 \
+--validation_metrics 'valid_obf_proba_#obf_proba_mt_subtoken_F1' \
+--stopping_criterion 'valid_obf_proba_#obf_proba_mt_subtoken_F1,10'
+

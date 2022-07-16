@@ -16,7 +16,7 @@ def compute_subtokens(token):
     return [x for x in snakecase(token).split("_") if len(x) > 0]
 
 
-def subtoken_counts(proposed, ground_truth):
+def desubtoken_counts(proposed, ground_truth):
     """
     Compute the number of precise tokens, proposed tokens and ground truth tokens
     from two strings representing tokens.
@@ -52,6 +52,7 @@ def run_subtoken_score(ref, hyp, subtoken_average=False, all_beams=False):
     else:
         if not all_beams:
             hyps = [[h[0]] for h in hyps]
+        print("im here at run_subtoken_score()")
         assert len(hyps) == len(refs)
         return subtoken_score_on_lines(hyps, refs)
 
@@ -61,16 +62,24 @@ def subtoken_score_on_lines(hyps_list, refs):
     count_exact_matches = 0
     for hyps, ref in zip(hyps_list, refs):
         matches = {}
-        for obfuscated, deobfuscated in [
-            (entry.strip().split(" ")[0], entry.strip().split(" ")[1])
-            for entry in ref.split("|")
-        ]:
-            assert obfuscated not in matches
-            matches[obfuscated] = {"ref": deobfuscated}
+        iter_list = []
+        for entry in ref.split("|"): 
+            total_splitted = entry.strip().split(" ")
+            if len(total_splitted) > 2: 
+                obfuscated = "".join(total_splitted[:-1])
+                iter_list.append((obfuscated, total_splitted[-1]))
+            else: 
+                iter_list.append( (total_splitted[0], total_splitted[1]))
+
+        # print(iter_list)
+        for obfuscated, deobfuscated in iter_list:
+            assert obfuscated not in matches, f"matches {matches} \n obfuscated {obfuscated}"
+            if deobfuscated.find('<unk>') == -1 and obfuscated.find('<unk>') == -1: 
+                matches[obfuscated] = {"ref": deobfuscated}
         for hyp_index, hyp in enumerate(hyps):
             for entry in hyp.split("|"):
                 split = entry.strip().split(" ")
-                if len(split) < 2:
+                if len(split) != 2:
                     continue
                 else:
                     obfuscated, deobfuscated = split[0], split[1]
@@ -79,6 +88,8 @@ def subtoken_score_on_lines(hyps_list, refs):
                     continue
                 else:
                     matches[obfuscated][f"hyp_{hyp_index}"] = deobfuscated
+
+        # print(matches)
         for match in matches.values():
             assert "ref" in match
             best_precision, best_recall, best_f1 = 0, 0, 0

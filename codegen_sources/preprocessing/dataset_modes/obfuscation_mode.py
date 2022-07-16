@@ -18,6 +18,8 @@ from codegen_sources.preprocessing.lang_processors.lang_processor import LangPro
 from codegen_sources.preprocessing.obfuscation.utils_deobfuscation import REPLACE_DICT
 from codegen_sources.preprocessing.timeout import timeout
 from submitit import Executor, LocalExecutor
+import csv
+import os
 
 OUTLIER_INDICES_THRESHOLDS = {"VAR_": 200, "FUNC_": 200, "CLASS_": 100}
 
@@ -74,10 +76,19 @@ class ObfuscationMode(DatasetMode):
             return default_return
 
         content = json_line["content"]
-        for k, v in REPLACE_DICT.items():
-            content = content.replace(k, v)
         try:
-            obfuscated, dico = lang_processor.obfuscate_code(content)
+            assert content != None
+            for k, v in REPLACE_DICT.items():
+                content = content.replace(k, v)
+            # obfuscated = content
+            # dict_path = json_line["path"].replace("AnghaBench_pre_masked","AnghaBench_dict")[:-7]+'.csv'
+            # assert(os.path.isfile(dict_path)), f'os.path.isfile({dict_path})'
+            # dico = ""
+            # with open(dict_path, newline='') as csvfile:
+            #     reader = csv.reader(csvfile)
+            #     dico = {rows[1]:rows[0] for rows in reader}
+            # dico = " | ".join([f"{k} {dico[k]}" for k in sorted(dico)])
+            obfuscated, dico = lang_processor.obfuscate_code(content, path=json_line["path"])
             tokenized_obfuscated_file = " ".join(
                 lang_processor.tokenize_code(
                     obfuscated,

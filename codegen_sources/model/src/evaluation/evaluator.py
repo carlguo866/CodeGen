@@ -7,6 +7,7 @@
 
 import json
 import os
+from pickle import TRUE
 import subprocess
 from collections import OrderedDict
 from logging import getLogger
@@ -43,7 +44,7 @@ SRC_ST_LANGS = "java"
 
 TARGET_ST_LANG = {"cpp", "python"}
 
-EVAL_OBF_PROBAS = []
+EVAL_OBF_PROBAS = [0,1]
 
 BLEU_SCRIPT_PATH = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "multi-bleu.perl"
@@ -217,8 +218,8 @@ class Evaluator(object):
                             (span_batch, len_span, _, _),
                         ) = batch
                         spans.extend(list(span_batch.T))
-                    lang1_txt.extend(convert_to_text(sent1, len1, self.dico, params))
-                    lang2_txt.extend(convert_to_text(sent2, len2, self.dico, params))
+                    lang1_txt.extend(convert_to_text(sent1, len1, self.dico, params,unk_space=True))
+                    lang2_txt.extend(convert_to_text(sent2, len2, self.dico, params,unk_space=True))
                     if has_sent_ids:
                         assert id1.equal(id2) and lenid1.equal(lenid2)
                         id_txt.extend(convert_to_text(id1, lenid1, self.dico, params))
@@ -936,8 +937,8 @@ class EncDecEvaluator(Evaluator):
                             generate_several_reps=True,
                         )
                     )
-                    references.extend(convert_to_text(x2, len2, self.dico, params))
-                    sources.extend(convert_to_text(x1, len1, self.dico, params))
+                    references.extend(convert_to_text(x2, len2, self.dico, params,unk_space=True))
+                    sources.extend(convert_to_text(x1, len1, self.dico, params,unk_space=True))
 
             # compute perplexity and prediction accuracy
             l1l2 = get_l1l2_string(lang1, lang2, deobfuscation_proba)

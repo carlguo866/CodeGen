@@ -70,7 +70,7 @@ class DatasetMode(Generic[T]):
         parallel_dataset: bool,
         processed_lines: set = None,
         suffixes_for_postprocessing=(),
-        nb_train_split=8,
+        nb_train_split=1,
         keep_comments: bool = False,
     ):
         self.suffixes = suffixes
@@ -124,6 +124,7 @@ class DatasetMode(Generic[T]):
         Takes the root folder of the dataset, containing json files as input
         For each json in it extract data, tokenize, and save in dedicated .tok file
         """
+
         logger.info("")
         logger.info("")
         logger.info("========== Extract and Tokenize ===========")
@@ -156,6 +157,7 @@ class DatasetMode(Generic[T]):
         )
         if len(json_files) > 0:
             if hasattr(executor, "map_array"):
+                print('map_array')
                 jobs += executor.map_array(
                     self.extract_from_json_and_tokenize,
                     files,
@@ -163,6 +165,7 @@ class DatasetMode(Generic[T]):
                     repeat(self.bpe.process_strings),
                 )
             else:
+                print('not map_array')
                 for f, flang in zip(files, file_langs):
                     jobs.append(
                         executor.submit(
@@ -178,6 +181,8 @@ class DatasetMode(Generic[T]):
 
         for job in jobs:
             job.result()
+        executor.shutdown()
+
 
     def extract_from_json_and_tokenize(
         self,
@@ -221,17 +226,16 @@ class DatasetMode(Generic[T]):
                 ), "Number of processors must be greater than number of max workers in ProcessPoolExecutor"
                 # Leave one processor free for other tasks.
                 executor = Pool(
-                    processes=cpu_count() - local_parallelism - 1,
+                    processes=5,
                     initializer=self.initialize_processor,
                 )
             else:
                 executor = Pool(
-                    processes=cpu_count(), initializer=self.initialize_processor
+                    processes=5, initializer=self.initialize_processor
                 )
             results_for_line = tqdm.tqdm(
                 executor.map(self.checkpoint_line, lines), total=len(lines)
             )
-
             for line_id, repo, tokenized_data in results_for_line:
                 self.processed_lines.add(line_id)
                 # returning None means there was an issue
@@ -311,6 +315,9 @@ class DatasetMode(Generic[T]):
                 f.close()
             logger.warning("Program closed automatically after one hour")
             exit(1)
+        except Exception as e: 
+            logger.warning(f"other errors {e}")
+            exit(1)
 
     def checkpoint_line(self, line):
         line_id, json_line, lang, process_strings = line
@@ -325,8 +332,10 @@ class DatasetMode(Generic[T]):
                 line_id, json_line, process_strings, lang_processors[lang]
             )
         except timeout.TimeoutError:
-            logger.info("Timeout error extracting data")
+            logger.info(f"Timeout error extracting data {line_id} ")
             return line_id, None, TIMEOUT
+        except Exception as e: 
+            logger.info(f"other error {e} in checkpoint_line()")
 
     def open_tok_files(self, files: dict):
         return {
@@ -499,7 +508,7 @@ class DatasetMode(Generic[T]):
                     # Deduplication
                     for line_id, line in enumerate(all_splits_file):
                         if self.id_is_line:
-                            line = f"{line_id}/{line_id } | {line}"
+                            line = f"{line_id}/{line_id} | {line}"
 
                         if "|" not in line or "/" not in line.split("|", 1)[0]:
                             logger.warning(f"Missing ID at line {line_id}")
@@ -662,6 +671,7 @@ class DatasetMode(Generic[T]):
                 )
         for job in jobs:
             job.result()
+        executor.shutdown()
         logger.info("Binarize done.")
 
     def check_files_and_symlink_for_XLM(self):

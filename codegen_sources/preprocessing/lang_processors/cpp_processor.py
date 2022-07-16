@@ -14,9 +14,15 @@ from codegen_sources.preprocessing.lang_processors.java_processor import (
 )
 from codegen_sources.preprocessing.lang_processors.tokenization_utils import ind_iter
 import re
+import os 
+import random
+import string
+import subprocess
+import shutil
+import csv
 
 IDENTIFIERS = {"identifier", "field_identifier"}
-
+from pathlib import Path 
 CPP_TOKEN2CHAR = JAVA_TOKEN2CHAR.copy()
 CPP_CHAR2TOKEN = JAVA_CHAR2TOKEN.copy()
 
@@ -37,11 +43,71 @@ class CppProcessor(TreeSitterLangProcessor):
     def extract_arguments(self, function):
         return self.extract_arguments_using_parentheses(function)
 
+    def mask(self, cmd):
+        process = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
+        # output = process.stdout.decode('UTF-8')
+        # if output.find("error:") != -1: 
+        #     if output.find("file not found") == -1: 
+        #         print(output[:output.index('\n')])
+
+    def obfuscate_code(self, code, path=None):
+        folder = Path('/home/carl/CodeGen/tmp')
+        if not folder.is_dir(): 
+            folder.mkdir()
+        letters = string.ascii_lowercase
+        folder = folder.joinpath(''.join(random.choice(letters) for i in range(20)))
+        if not folder.is_dir(): 
+            folder.mkdir() 
+        else: 
+            print('repeats!!', flush=True)
+        assert path != None, "(path == None)"
+        suffix = str(path).rsplit('.', 1)[1]
+        assert (suffix in ['c', 'cpp', 'cc']), f"weird path suffix {suffix}"
+        original_path = folder.joinpath(f'text.{suffix}')
+
+        writer = open(original_path,'w')
+        writer.write(code) 
+        writer.close()
+
+        os.chdir(folder)
+        cmd = "clang-tidy "+ str(original_path)+" -checks=readability-func-name-obfuscator,readability-var-name-obfuscator --fix"
+        # try: 
+        self.mask(cmd)
+        # except Exception as e:
+        #     print(f"Error obfuscating through clang-tidy {cmd} {folder} {e} ")
+        #     return None, None
+
+        obfuscated = open(str(original_path), 'r').read()
+        # print(obfuscated)
+        dict_path = folder.joinpath('nametomask.csv')
+        if not dict_path.is_file(): 
+            process = subprocess.run(f'rm -rf {folder}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
+            output = process.stdout.decode('UTF-8')
+            if output.find("error:") != -1: 
+                print(output[:output.index('\n')])
+            assert dict_path.is_file(), f'{dict_path} is not a file'
+        dico = ""
+        with open(dict_path, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            dico = {rows[1]:rows[0] for rows in reader}
+        dico = " | ".join([f"{k} {dico[k]}" for k in sorted(dico)])
+        # process = subprocess.run(f'rm -rf {folder}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
+        # output = process.stdout.decode('UTF-8')
+        # if output.find("error:") != -1: 
+        #     print(output[:output.index('\n')])
+        # assert not os.path.isdir(folder), 'didnt delete path to tmp folder'
+        assert obfuscated != '' and dico != ''
+
+        
+        return obfuscated, dico
+
+
     def clean_hashtags_function(self, function):
         function = re.sub('[#][ ][i][n][c][l][u][d][e][ ]["].*?["]', "", function)
         function = re.sub("[#][ ][i][n][c][l][u][d][e][ ][<].*?[>]", "", function)
         function = re.sub("[#][ ][i][f][n][d][e][f][ ][^ ]*", "", function)
         function = re.sub("[#][ ][i][f][d][e][f][ ][^ ]*", "", function)
+        #replace .*? with (?!.*NEW_LINE).*? 
         function = re.sub(
             "[#][ ][d][e][f][i][n][e][ ][^ ]*[ ][(][ ].*?[ ][)][ ][(][ ].*[ ][)]",
             "",

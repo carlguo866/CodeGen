@@ -1029,7 +1029,7 @@ def safe_index(l, elmt):
         return None
 
 
-def convert_to_text(batch, lengths, dico, params, generate_several_reps=False):
+def convert_to_text(batch, lengths, dico, params, generate_several_reps=False, unk_space=False):
     """
     Convert a batch of sentences to a list of text sentences.
     """
@@ -1066,6 +1066,9 @@ def convert_to_text(batch, lengths, dico, params, generate_several_reps=False):
                 )
                 if next_element == params.eos_index:
                     break
+                # if unk_space and next_element == 3: 
+                #     words.append(dico[next_element]+'@@')
+                # else: 
                 words.append(dico[next_element])
             sentences[j].append(" ".join(words))
     if generate_several_reps:

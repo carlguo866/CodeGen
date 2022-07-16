@@ -1,0 +1,6 @@
+[submodule "apex"]
+	path = apex
+	url = https://github.com/NVIDIA/apex
+[submodule "codegen_sources/model/tools/fastBPE"]
+	path = codegen_sources/model/tools/fastBPE
+	url = https://github.com/NVIDIA/apex
